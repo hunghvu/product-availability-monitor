@@ -28,8 +28,10 @@ Not all edge cases are tested. A friend of mine asked me to create this script, 
 
 ## Demo
 
+![Demo](https://user-images.githubusercontent.com/62678592/147542053-c02bca16-1e12-46c6-a92e-544bbc5f6d42.png)
+
 ## License
 
 Copyright (c) 2021 Hung Huu Vu.
 
-Licensed under the [MIT license](LICENSE).
+Licensed under the [MIT License](LICENSE).

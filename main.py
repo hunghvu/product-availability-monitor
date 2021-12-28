@@ -3,7 +3,7 @@
 # of some specfic publishers.
 
 # Copyright 2021 Hung Huu Vu.
-# Licensed under MIT.
+# Licensed under the MIT License.
 
 import enum
 import json
@@ -130,8 +130,8 @@ def display_result(product_status, original_url, publisher: Publisher):
 # Main script
 try:
     print("\u00a9", datetime.now().year, "Hung Huu Vu.")
-    print("Licensed under MIT.")
-    print("Source code: https://github.com/hunghvu/vn-shop-crawl")
+    print("Licensed under the MIT License.")
+    print("Source code: https://github.com/hunghvu/product-availability-monitor")
     print()
 
     print("This script will monitor availability of your chosen products.")
@@ -201,4 +201,4 @@ except KeyboardInterrupt:
 
 except Exception as error:
     # traceback.print_exc()
-    print("Unknown error. Press Ctrl + C to exit and restart the script.")
+    print("Unknown error, require restart. If the script does not automatically exit, press Ctrl + C.")
