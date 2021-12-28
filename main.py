@@ -10,12 +10,6 @@ import validators
 from html.parser import HTMLParser
 from datetime import datetime
 
-# Sched order (?)
-# 1. If 2 events have the same delay time, then an order is based on priority
-# 2. If 2 events have the same delay time and priority, then an order is FCFS
-# 3. If 2 events have different delay time, then it works based on provided time order
-
-
 class MyHTMLParser(HTMLParser):
     def handle_data(self, data):
         if ("Haravan.OptionSelectors" in data):
@@ -23,7 +17,7 @@ class MyHTMLParser(HTMLParser):
             start_index = data.index("{\"available\":")
             end_index = data.index("onVariantSelected") - 2
             product_status = json.loads(data[start_index: end_index])
-            print("")
+            print()
             print("#################" + str(datetime.now()))
             print("Product name: " + product_status["handle"])
             if (not product_status["available"]):
@@ -31,20 +25,20 @@ class MyHTMLParser(HTMLParser):
             else:
                 print("Status: Some specific variants are in stock")
                 print("Variants:")
-                print("")
+                print()
                 counter = 1
                 for variant in product_status["variants"]:
-                    print(counter)
-                    counter += 1
-                    print("Title: " + variant["title"])
                     print(
-                        "Status: In stock" if variant["available"] else "Status: Out of stock")
+                        counter, "-", variant["title"],
+                        "- In stock" if variant["available"] else "- Out of stock")
+                    counter += 1
+
                     if(variant["available"]):
-                        print("Current price: " +
-                              str(variant["price"] / 100) + " VND")
-                        print("Available quantity: " +
+                        print("Current price:",
+                              str(variant["price"] / 100), "VND")
+                        print("Available quantity:",
                               str(variant["inventory_quantity"]))
-                    print("")
+                    print()
 
             # Add new response to schedule
             original_url = "https://ipm.vn/products/" + \
@@ -56,12 +50,15 @@ class MyHTMLParser(HTMLParser):
 
 # Main script
 try:
-    # TODO: Add license and copyright
-    print("Created by Hung Vu")
-    print("This script will monitor availability of your chosen IPM products automatically.")
+    print("\u00a9", datetime.now().year, "Hung Huu Vu")
+    print("Licensed under MIT")
+    print("Source code: https://github.com/hunghvu/vn-shop-crawl")
+    print()
 
-    print("Press Ctrl + C to kill the script.")
-    print("")
+    print("This script will monitor availability of your chosen IPM products.")
+
+    print("Press Ctrl + C to exit the program.")
+    print()
 
     url_list = []
     url_list_confirm = False
@@ -71,8 +68,9 @@ try:
     parser = MyHTMLParser()
 
     while(not url_list_confirm):
-        choice = input("Enter URL of new IPM product or (Y) to confirm your list: ")
-        print("")
+        choice = input(
+            "Enter URL of new IPM product or (Y) to confirm your list: ")
+        print()
         if(choice == "Y"):
             break
         elif(validators.url(choice) == True):
@@ -82,16 +80,17 @@ try:
                 print(url)
         elif(isinstance(validators.url(choice), validators.utils.ValidationFailure)):
             print("Invalid URL. Please try again.")
-        print("")
+        print()
 
     while (interval == None):
-        choice = input("Enter request interval (an integer, in seconds, min is 1): ")
-        if(choice.isdigit() and int(choice) > 1):
+        choice = input(
+            "Enter request interval (an integer, in seconds, min is 1): ")
+        if(choice.isdigit() and int(choice) >= 1):
             interval = int(choice)
             break
         else:
             print("Invalid choice. Please try again.")
-        print("")
+        print()
 
     for url in url_list:
         response_dict[url] = requests.get(url)
