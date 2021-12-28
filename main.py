@@ -7,6 +7,7 @@
 
 import enum
 import json
+import re
 import requests
 import sched
 import time
@@ -122,7 +123,7 @@ def display_result(product_status, original_url, publisher: Publisher):
         elif(inventory_type == "preorder"):
             print("Status: Preorder")
 
-        print("Current price:", product_status["price"])
+        print("Current price:", product_status["price"], "VND")
         print("Available quantity: Unknown")
 
 
@@ -183,11 +184,11 @@ try:
                     "product_status": json.loads(response_dict[url].content.decode())})
 
         elif("https://tiki.vn/" in url):
-            p_key = url[url.index(".html") - 9: url.index(".html")]
-            pid_key = url[url.index("pid=") + 4: url.index("pid=") + 14]
+            p_key = re.search("-p([0-9]+?).html", url).group(1)
+            pid_key = url[url.index("pid=") + 4:]
             request_url = "https://tiki.vn/api/v2/products/" + \
                 p_key + "?platform=web&pid=" + pid_key
-            headers = {
+            headers = { #Bypass 403 response
                 "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:95.0) Gecko/20100101 Firefox/95.0"}
             response_dict[url] = requests.get(request_url, headers=headers)
             s.enter(interval, 1, tiki_response_handler, kwargs={
