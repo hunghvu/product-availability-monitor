@@ -19,7 +19,7 @@ VSVersionInfo(
         StringStruct(u'FileVersion', u'1.0.0.0'),
         StringStruct(u'InternalName', u'product-availability-monitor'),
         StringStruct(u'LegalCopyright', u'\xa9 2021 Hung Huu Vu.'),
-        StringStruct(u'OriginalFilename', u'Product Availability Monitor.Exe'),
+        StringStruct(u'OriginalFilename', u'Product-Availability-Monitor.exe'),
         StringStruct(u'ProductName', u'Product Availability Monitor'),
         StringStruct(u'ProductVersion', u'1.0.0.0')])
       ]), 
