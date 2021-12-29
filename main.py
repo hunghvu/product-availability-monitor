@@ -161,13 +161,19 @@ try:
             "Enter URL of a new product or (Y) to confirm your list: ")
         print()
         if(choice == "Y"):
-            break
-        elif(validators.url(choice) == True):
+            if (len(url_list) > 0):
+                break
+            print("Your list of product cannot be empty. Please try again.")
+        elif(validators.url(choice) == True and (
+            "https://ipm.vn/" in choice
+            or "https://nxbkimdong.com.vn/" in choice
+            or "https://tiki.vn/" in choice
+        )):
             url_list.append(choice)
             print("Your list of products:")
             for url in url_list:
                 print(url)
-        elif(isinstance(validators.url(choice), validators.utils.ValidationFailure)):
+        else:
             print("Invalid URL. Please try again.")
         print()
 
