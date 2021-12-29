@@ -1,6 +1,6 @@
 # Author: Hung Vu
 # This script will monitor product availability
-# of some specfic publishers.
+# of some specfic publishers and retailers.
 
 # Copyright 2021 Hung Huu Vu.
 # Licensed under the MIT License.
@@ -13,34 +13,37 @@ import sched
 import time
 import validators
 # import traceback
-from html.parser import HTMLParser
 from datetime import datetime
 
 
 class Publisher(enum.Enum):
     kim_dong = 1
-    ipm = 2
-    tiki = 3
+    ipm_full_info = 2
+    ipm_partial_info = 3
+    tiki = 4
 
 
-class IPMResponseHTMLParser(HTMLParser):
-    """
-    This parses product status in JSON from IPM HTML response.
-    """
+def ipm_response_handler(html_response):
+    original_url = re.search(
+        "rel=\"canonical\" href=\"(.+?)\"", html_response).group(1)
+    product_status = None
+    if ("Haravan.OptionSelectors" in html_response):
+        # There is a space before "available", but it got lost after the parsing process
+        start_index = html_response.index("{ product: {\"available\":") + 11
+        end_index = html_response.index("onVariantSelected") - 2
+        product_status = json.loads(html_response[start_index: end_index])
+        display_result(product_status, original_url, Publisher.ipm_full_info)
+    else:
+        start_index = html_response.index("{\"page\"")
+        end_index = html_response.index("for (var attr in meta) {") - 2
+        product_status = json.loads(
+            html_response[start_index: end_index])["product"]
+        display_result(product_status, original_url,
+                       Publisher.ipm_partial_info)
 
-    def handle_data(self, data):
-        if ("Haravan.OptionSelectors" in data):
-            # There is a space before "available", but it got lost after the parsing process
-            start_index = data.index("{\"available\":")
-            end_index = data.index("onVariantSelected") - 2
-            product_status = json.loads(data[start_index: end_index])
-            original_url = "https://ipm.vn/products/" + \
-                product_status["handle"]
-            display_result(product_status, original_url, Publisher.ipm)
-            # Add new response to schedule
-            response_dict[original_url] = requests.get(original_url)
-            s.enter(interval, 1, self.feed, kwargs={
-                    "data": response_dict[original_url].content.decode()})
+    response_dict[original_url] = requests.get(original_url)
+    s.enter(interval, 1, ipm_response_handler, kwargs={
+            "html_response": response_dict[original_url].content.decode()})
 
 
 def kim_dong_response_handler(product_status):
@@ -79,7 +82,7 @@ def display_result(product_status, original_url, publisher: Publisher):
     """
     print()
     print("#################" + str(datetime.now()))
-    if (publisher in [Publisher.kim_dong, Publisher.ipm]):
+    if (publisher in [Publisher.kim_dong, Publisher.ipm_full_info]):
         print("Product name: " + product_status["handle"])
         print("URL:", original_url)
         if (not product_status["available"]):
@@ -92,7 +95,7 @@ def display_result(product_status, original_url, publisher: Publisher):
             for variant in product_status["variants"]:
                 print(
                     counter, "-", variant["title"] if publisher in [
-                        Publisher.ipm] else product_status["title"],
+                        Publisher.ipm_full_info] else product_status["title"],
                     "- In stock" if variant["available"] else "- Out of stock")
                 counter += 1
 
@@ -102,7 +105,14 @@ def display_result(product_status, original_url, publisher: Publisher):
                     print("Available quantity:",
                           str(variant["inventory_quantity"]))
                 print()
-
+    elif (publisher in [Publisher.ipm_partial_info]):
+        print("Product name: " + product_status["title"])
+        print("URL:", original_url)
+        print(
+            "Status: In stock" if product_status["available"] else "Status: Out of stock")
+        print("Current price:",
+              str(product_status["price"] / 100), "VND")
+        print("Available quantity: Unknown")
     elif(publisher in [Publisher.tiki]):
         print("Product name: " + product_status["name"])
         print("URL:", original_url)
@@ -145,7 +155,6 @@ try:
     interval = None
     response_dict = {}
     s = sched.scheduler(time.time, time.sleep)
-    parser = IPMResponseHTMLParser()
 
     while(not url_list_confirm):
         choice = input(
@@ -173,12 +182,12 @@ try:
         print()
 
     for url in url_list:
-        if ("https://ipm.vn/products/" in url):
+        if ("https://ipm.vn/" in url):
             response_dict[url] = requests.get(url)
-            s.enter(interval, 1, parser.feed, kwargs={
-                "data": response_dict[url].content.decode()})
+            s.enter(interval, 1, ipm_response_handler, kwargs={
+                "html_response": response_dict[url].content.decode()})
 
-        elif("https://nxbkimdong.com.vn/products/" in url):
+        elif("https://nxbkimdong.com.vn/" in url):
             response_dict[url] = requests.get(url + ".js")
             s.enter(interval, 1, kim_dong_response_handler, kwargs={
                     "product_status": json.loads(response_dict[url].content.decode())})
@@ -188,7 +197,7 @@ try:
             pid_key = url[url.index("pid=") + 4:]
             request_url = "https://tiki.vn/api/v2/products/" + \
                 p_key + "?platform=web&pid=" + pid_key
-            headers = { #Bypass 403 response
+            headers = {  # Bypass 403 response
                 "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:95.0) Gecko/20100101 Firefox/95.0"}
             response_dict[url] = requests.get(request_url, headers=headers)
             s.enter(interval, 1, tiki_response_handler, kwargs={
